@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eco Roam Poultry — Controller</title>
+  <link rel="icon" type="image/svg+xml" href="icon.webp"/>
+</svg>
+
+  <style>
+    :root{
+      --green:#22c55e; /* primary */
+      --green-600:#c8e71e;
+      --green-700:#15803d;
+      --bg:#f6f8fa;      /* black */
+      --panel:#111213;   /* near black */
+      --muted:#1b1d1e;
+      --text:#d6c9c9;    /* white */
+      --subtext:#b5c4b5; /* desaturated light */
+      --border:#1f2922;  /* dark greenish */
+      --accent:#86efac;  /* light green */
+      --danger:#ef4444;
+      --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg, #0b0f0b 0%, #0a0a0a 100%);color:var(--text)}
+    .app{max-width:1200px;margin:0 auto;padding:24px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:40px;height:40px;border-radius:10px;background:radial-gradient(100% 100% at 30% 30%, var(--accent) 0%, var(--green) 60%, var(--green-700) 100%);box-shadow:0 0 0 3px #0d1b12 inset, 0 8px 24px rgba(34,197,94,.25)}
+    .title{line-height:1;margin:0}
+    .title small{display:block;color:var(--subtext);font-weight:500;margin-top:4px}
+    .actions{display:flex;gap:10px}
+    button,.btn{appearance:none;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;transition:all .2s ease;box-shadow:0 0 0 1px rgba(255,255,255,.02) inset}
+    button:hover{border-color:var(--green);transform:translateY(-1px)}
+    .btn-primary{background:linear-gradient(180deg,var(--green),var(--green-600));border-color:#0d2516;color:#051408;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+    .btn-danger{background:linear-gradient(180deg,#ff6b6b,var(--danger));border-color:#3b0b0b}
+    .grid{display:grid;gap:16px}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .card{background:linear-gradient(180deg,#0d120e, #0b0c0b);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+    .kpi{padding:14px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,#0d120f,#0b0f0b)}
+    .kpi h3{margin:0 0 8px;font-size:13px;color:var(--subtext);font-weight:600}
+    .kpi .value{font-size:24px;font-weight:800;letter-spacing:.3px}
+    .kpi .trend{font-size:12px;color:var(--accent)}
+    /* layout */
+    .main{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+    .field{aspect-ratio: 4/3;background:radial-gradient(100% 120% at 50% 0%, #0f1a11 0%, #0c100c 100%);border-radius:20px;border:1px solid var(--border);position:relative;overflow:hidden}
+    .gridlines{position:absolute;inset:0;background-image:linear-gradient(to right, rgba(134,239,172,.08) 1px, transparent 1px),linear-gradient(to bottom, rgba(134,239,172,.08) 1px, transparent 1px);background-size:40px 40px;filter:saturate(0.9)}
+    .field .waypoint{position:absolute;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 3px rgba(134,239,172,.15)}
+    .rover{--s:24px;position:absolute;width:var(--s);height:var(--s);border-radius:10px;background:linear-gradient(180deg,#d1fae5,#10b981);border:1px solid #052d1c;display:grid;place-items:center;box-shadow:0 10px 24px rgba(16,185,129,.35)}
+    .rover::after{content:"";width:60%;height:4px;border-radius:3px;background:#052d1c;opacity:.7}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#07150d;border:1px solid var(--border);font-size:12px;color:var(--accent)}
+    .controls .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .toggle{display:inline-grid;grid-template-columns:1fr 1fr;background:#0b100c;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .toggle button{border:none;padding:10px 12px}
+    .toggle .active{background:var(--green);color:#04240f}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .label{font-size:12px;color:var(--subtext)}
+    input[type="range"]{accent-color:var(--green);width:160px}
+    .log{height:180px;overflow:auto;background:#0a0f0b;border:1px solid var(--border);border-radius:12px;padding:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px}
+    .log .entry{padding:6px 8px;border-bottom:1px solid #112016}
+    .pill{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#0a100c;font-size:12px}
+    .footer{margin-top:14px;color:var(--subtext);font-size:12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .status-dot{width:10px;height:10px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px rgba(245,158,11,.2)}
+    .ok{background:var(--green)}
+    @media (max-width:1020px){
+      .kpis{grid-template-columns:repeat(2,1fr)}
+      .main{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1 class="title">Eco Roam Poultry <small>Real-Time Control Panel for Poultry Farm Automation</small></h1>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="saveProfile" class="btn">Save Profile</button>
+        <button id="exportLog" class="btn">Export Log</button>
+        <button id="panicStop" class="btn btn-danger">EMERGENCY STOP</button>
+      </div>
+    </header>
+
+    <!-- KPIs -->
+    <section class="card">
+      <div class="kpis" role="group" aria-label="Live metrics">
+        <div class="kpi" id="kpi-temp"><h3>Temperature</h3><div class="value"><span data-v="temp">--</span> °C</div><div class="trend" data-t="tempTrend">—</div></div>
+        <div class="kpi" id="kpi-hum"><h3>Humidity</h3><div class="value"><span data-v="hum">--</span> %</div><div class="trend" data-t="humTrend">—</div></div>
+        <div class="kpi" id="kpi-ammo"><h3>Ammonia</h3><div class="value"><span data-v="nh3">--</span> ppm</div><div class="trend" data-t="nh3Trend">—</div></div>
+        <div class="kpi" id="kpi-feed"><h3>Feed Level</h3><div class="value"><span data-v="feed">--</span> %</div><div class="trend" data-t="feedTrend">—</div></div>
+        <div class="kpi" id="kpi-water"><h3>Water Level</h3><div class="value"><span data-v="water">--</span> %</div><div class="trend" data-t="waterTrend">—</div></div>
+      </div>
+    </section>
+
+    <section class="main">
+      <!-- Field & Rover -->
+      <div class="card">
+        <div class="section-title">
+          <span class="badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3h18v2H3V3zm0 6h18v2H3V9zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg> Field Monitor</span>
+          <div class="pill"><span id="modeLabel">Mode: Idle</span></div>
+        </div>
+        <div class="field" id="field">
+          <div class="gridlines" aria-hidden="true"></div>
+          <!-- waypoints will be injected -->
+          <div class="rover" id="rover" aria-label="Feeder rover" style="left:12px;top:12px"></div>
+        </div>
+        <div class="footer">
+          <div class="row">
+            <div class="status-dot" id="connDot" title="Connection"></div>
+            <span>Device: <strong id="connStatus">Connecting…</strong></span>
+          </div>
+          <div>Last sync: <span id="lastSync">—</span></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="card controls" aria-live="polite">
+        <div class="section-title">
+          <span class="badge">Controls</span>
+          <span class="label">Profile: <span id="profileName">Default</span></span>
+        </div>
+
+        <div class="row" style="margin-bottom:12px">
+          <div>
+            <div class="label">Fan</div>
+            <div class="toggle" role="tablist" aria-label="Fan mode">
+              <button id="fan-off" aria-selected="true">Off</button>
+              <button id="fan-auto">Auto</button>
+            </div>
+          </div>
+          <div>
+            <div class="label">Auto Fan Threshold (°C)</div>
+            <input id="fanThresh" type="range" min="20" max="40" step="1" value="30" />
+            <span id="fanThreshVal" class="pill">30°C</span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:12px">
+          <div>
+            <div class="label">Feed Roam</div>
+            <div class="toggle" role="tablist" aria-label="Roam mode">
+              <button id="roam-manual" class="active">Manual</button>
+              <button id="roam-auto">Auto</button>
+            </div>
+          </div>
+          <div>
+            <div class="label">Speed</div>
+            <input id="speed" type="range" min="1" max="6" step="1" value="3" /> <span id="speedVal" class="pill">3</span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <div class="label">Move</div>
+          <div class="row">
+            <button class="btn" data-move="up">▲</button>
+            <span class="row">
+              <button class="btn" data-move="left">◀</button>
+              <button class="btn btn-primary" id="feedNow">Feed Now</button>
+              <button class="btn" data-move="right">▶</button>
+            </span>
+            <button class="btn" data-move="down">▼</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <div class="label">Auto Path</div>
+          <button id="startRoam" class="btn btn-primary">Start Roam</button>
+          <button id="stopRoam" class="btn">Stop</button>
+          <button id="setWaypoints" class="btn">Randomize Waypoints</button>
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <div class="label">Schedule</div>
+          <input id="schedTime" type="time" value="06:30" class="pill" />
+          <button id="addSchedule" class="btn">Add Daily Feed</button>
+          <span class="label" id="scheduleList"></span>
+        </div>
+
+        <div class="label" style="margin-top:8px">Event Log</div>
+        <div class="log" id="log" aria-live="polite" aria-label="Event log"></div>
+      </div>
+    </section>
+  </div>
+  <footer style="margin-top:40px; padding:20px; text-align:center; border-top:1px solid #1f2922; color:#b5c4b5; font-size:13px;">
+  <p><strong>Eco Roam Poultry</strong> — Smart IoT Farm Controller</p>
+  <p>
+    <a href="https://github.com/yourusername" target="_blank" style="color:#22c55e; text-decoration:none; margin:0 8px;">
+      <i class="fab fa-github"></i>
+    </a>
+    <a href="https://linkedin.com/in/yourusername" target="_blank" style="color:#22c55e; text-decoration:none; margin:0 8px;">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </p>
+  <p>© 2025 Muthusamy. All rights reserved.</p>
+</footer>
+
+
+  <script>
+    // ----- Utilities -----
+    const $ = (sel, parent=document) => parent.querySelector(sel);
+    const $all = (sel, parent=document) => [...parent.querySelectorAll(sel)];
+    const logEl = $('#log');
+    const field = $('#field');
+    const rover = $('#rover');
+
+    function log(msg){
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.textContent = `[${time}] ${msg}`;
+      logEl.prepend(div);
+    }
+
+    function savePrefs(){
+      const prefs = {
+        fanMode: fan.mode,
+        fanThresh: +$('#fanThresh').value,
+        roamMode: roam.mode,
+        speed: +$('#speed').value,
+        schedule: schedule.items
+      };
+      localStorage.setItem('ecoRoamPrefs', JSON.stringify(prefs));
+      log('Preferences saved');
+    }
+    function restorePrefs(){
+      const raw = localStorage.getItem('ecoRoamPrefs');
+      if(!raw) return;
+      try{
+        const p = JSON.parse(raw);
+        // Fan
+        fan.setMode(p.fanMode||'off');
+        $('#fanThresh').value = p.fanThresh||30;
+        $('#fanThreshVal').textContent = `${$('#fanThresh').value}°C`;
+        // Roam
+        roam.setMode(p.roamMode||'manual');
+        $('#speed').value = p.speed||3;
+        $('#speedVal').textContent = $('#speed').value;
+        // Schedule
+        schedule.items = p.schedule||[];
+        schedule.render();
+      }catch(e){console.warn('prefs parse',e)}
+    }
+
+    // ----- Fake sensors (mock) -----
+    const sensors = {
+      temp: 28, hum: 63, nh3: 18, feed: 76, water: 82,
+      tick(){
+        const r=(n)=> (Math.random()*n - n/2);
+        this.temp = Math.max(18, Math.min(40, this.temp + r(1.4)));
+        this.hum  = Math.max(30, Math.min(95, this.hum  + r(2)));
+        this.nh3  = Math.max(0,  Math.min(50, this.nh3  + r(1)));
+        this.feed = Math.max(0,  Math.min(100,this.feed - Math.random()*0.3));
+        this.water= Math.max(0,  Math.min(100,this.water - Math.random()*0.15));
+      }
+    };
+    const kpiMap = {
+      temp: $('[data-v="temp"]'), hum: $('[data-v="hum"]'), nh3: $('[data-v="nh3"]'),
+      feed: $('[data-v="feed"]'), water: $('[data-v="water"]'),
+      tempTrend: $('[data-t="tempTrend"]'), humTrend: $('[data-t="humTrend"]'), nh3Trend: $('[data-t="nh3Trend"]'),
+      feedTrend: $('[data-t="feedTrend"]'), waterTrend: $('[data-t="waterTrend"]')
+    };
+
+    function updateKPIs(prev){
+      const s=sensors;
+      kpiMap.temp.textContent = s.temp.toFixed(1);
+      kpiMap.hum.textContent = s.hum.toFixed(0);
+      kpiMap.nh3.textContent = s.nh3.toFixed(0);
+      kpiMap.feed.textContent = s.feed.toFixed(0);
+      kpiMap.water.textContent = s.water.toFixed(0);
+      if(prev){
+        kpiMap.tempTrend.textContent = arrow(s.temp - prev.temp);
+        kpiMap.humTrend.textContent  = arrow(s.hum - prev.hum);
+        kpiMap.nh3Trend.textContent  = arrow(s.nh3 - prev.nh3);
+        kpiMap.feedTrend.textContent = arrow(s.feed - prev.feed, true);
+        kpiMap.waterTrend.textContent= arrow(s.water - prev.water, true);
+      }
+    }
+    function arrow(delta, downIsBad=false){
+      const d = delta.toFixed(1);
+      return (downIsBad ? (delta<0? '▼ ': '▲ ') : (delta>0? '▲ ': '▼ ')) + Math.abs(d);
+    }
+
+    // ----- Fan controller -----
+    const fan = {
+      mode:'off',
+      on:false,
+      setMode(m){
+        this.mode = m; $('#fan-off').classList.toggle('active', m==='off');
+        $('#fan-auto').classList.toggle('active', m==='auto');
+        log(`Fan mode → ${m.toUpperCase()}`);
+      },
+      evaluate(){
+        if(this.mode==='auto'){
+          const thresh = +$('#fanThresh').value;
+          const shouldOn = sensors.temp >= thresh;
+          if(shouldOn!==this.on){ this.on = shouldOn; log(`Fan ${this.on?'ON':'OFF'} (auto, ${sensors.temp.toFixed(1)}°C ≥ ${thresh}°C)`); }
+        }
+      },
+      emergencyStop(){
+        this.on=false; this.mode='off';
+        $('#fan-off').classList.add('active');
+        $('#fan-auto').classList.remove('active');
+        log('EMERGENCY STOP → Fan OFF');
+      }
+    };
+
+    // ----- Roaming rover -----
+    const roam = {
+      mode:'manual',
+      vx: 0, vy: 0,
+      speed: 3,
+      auto:false,
+      waypoints:[],
+      i:0,
+      setMode(m){ this.mode=m; $('#roam-manual').classList.toggle('active', m==='manual'); $('#roam-auto').classList.toggle('active', m==='auto'); $('#modeLabel').textContent = `Mode: ${m}`; log(`Roam mode → ${m.toUpperCase()}`) },
+      setSpeed(v){ this.speed=v; $('#speedVal').textContent=v },
+      setWaypoints(n=8){
+        this.waypoints = [];
+        const pad=20; const rect = field.getBoundingClientRect();
+        for(let i=0;i<n;i++){
+          this.waypoints.push({ x: pad + Math.random()*(rect.width-2*pad), y: pad + Math.random()*(rect.height-2*pad) })
+        }
+        drawWaypoints();
+        log(`Waypoints set (${n})`);
+      },
+      startAuto(){ if(!this.waypoints.length) this.setWaypoints(); this.auto=true; log('Auto roam: START'); },
+      stopAuto(){ this.auto=false; log('Auto roam: STOP'); }
+    };
+
+    function drawWaypoints(){
+      $all('.waypoint', field).forEach(n=>n.remove());
+      roam.waypoints.forEach(w=>{
+        const d = document.createElement('div');
+        d.className='waypoint'; d.style.left = (w.x-4)+'px'; d.style.top=(w.y-4)+'px';
+        field.appendChild(d);
+      });
+    }
+
+    function moveRover(dx,dy){
+      const rect = field.getBoundingClientRect();
+      const s = parseFloat(getComputedStyle(rover).getPropertyValue('--s'));
+      const pos = rover.getBoundingClientRect();
+      const left = rover.offsetLeft + dx;
+      const top  = rover.offsetTop  + dy;
+      const maxX = rect.width - s - 8; const maxY = rect.height - s - 8;
+      rover.style.left = Math.max(8, Math.min(maxX, left)) + 'px';
+      rover.style.top  = Math.max(8, Math.min(maxY, top)) + 'px';
+    }
+
+    function stepAuto(){
+      if(!roam.auto || !roam.waypoints.length) return;
+      const pos = { x: rover.offsetLeft, y: rover.offsetTop };
+      const target = roam.waypoints[roam.i % roam.waypoints.length];
+      const dx = target.x - pos.x, dy = target.y - pos.y;
+      const dist = Math.hypot(dx,dy);
+      const speed = roam.speed * 0.9;
+      if(dist < 6){
+        roam.i++; log(`Reached waypoint #${roam.i}`);
+      }else{
+        moveRover(dx/dist*speed, dy/dist*speed);
+      }
+    }
+
+    // ----- Scheduling -----
+    const schedule = {
+      items: [],
+      add(t){ if(!this.items.includes(t)){ this.items.push(t); this.items.sort(); this.render(); log(`Schedule added: ${t}`); } },
+      render(){ $('#scheduleList').textContent = this.items.length ? this.items.join(', ') : '—'; },
+      checkNow(){
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2,'0');
+        const m = String(now.getMinutes()).padStart(2,'0');
+        const stamp = `${h}:${m}`;
+        if(this.items.includes(stamp)){
+          feedNow();
+          log(`Scheduled feed executed at ${stamp}`);
+        }
+      }
+    };
+
+    function feedNow(){
+      // reduce feed level a bit as simulation
+      sensors.feed = Math.max(0, sensors.feed - (5 + Math.random()*5));
+      log('FEED DISPENSED');
+      flash(rover);
+    }
+
+    function flash(node){
+      node.animate([
+        {boxShadow:'0 10px 24px rgba(16,185,129,.35)'},
+        {boxShadow:'0 0 0 8px rgba(134,239,172,.0)'},
+      ],{duration:400,iterations:1});
+    }
+
+    // ----- Comms (mock) -----
+    let connected=false;
+    function connectMock(){
+      setTimeout(()=>{
+        connected=true; $('#connDot').classList.add('ok'); $('#connStatus').textContent='Online'; syncTick(); log('Connected to device (mock)');
+      }, 700);
+    }
+    function syncTick(){ $('#lastSync').textContent = new Date().toLocaleTimeString(); }
+
+    // ----- Event wiring -----
+    $('#fan-off').addEventListener('click',()=>fan.setMode('off'));
+    $('#fan-auto').addEventListener('click',()=>fan.setMode('auto'));
+    $('#fanThresh').addEventListener('input', e=> $('#fanThreshVal').textContent = e.target.value+"°C");
+
+    $('#roam-manual').addEventListener('click',()=>roam.setMode('manual'));
+    $('#roam-auto').addEventListener('click',()=>roam.setMode('auto'));
+    $('#speed').addEventListener('input', e=> roam.setSpeed(+e.target.value));
+
+    $all('[data-move]').forEach(b=> b.addEventListener('click',()=>{
+      if(roam.mode!=='manual') return;
+      const s = roam.speed * 4;
+      const dir = b.dataset.move;
+      const map = {up:[0,-s],down:[0,s],left:[-s,0],right:[s,0]};
+      const [dx,dy] = map[dir];
+      moveRover(dx,dy);
+    }));
+
+    $('#startRoam').addEventListener('click', ()=>{ roam.startAuto(); });
+    $('#stopRoam').addEventListener('click', ()=>{ roam.stopAuto(); });
+    $('#setWaypoints').addEventListener('click', ()=> roam.setWaypoints());
+    $('#feedNow').addEventListener('click', feedNow);
+
+    $('#addSchedule').addEventListener('click', ()=> schedule.add($('#schedTime').value));
+
+    $('#panicStop').addEventListener('click', ()=>{ roam.stopAuto(); fan.emergencyStop(); });
+
+    $('#saveProfile').addEventListener('click', savePrefs);
+    $('#exportLog').addEventListener('click', ()=>{
+      const text = [...$all('.entry', logEl)].reverse().map(e=>e.textContent).join('\n');
+      const blob = new Blob([text], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `eco-roam-log-${Date.now()}.txt`;
+      a.click();
+    });
+
+    // ----- Main loops -----
+    let prev = null;
+    setInterval(()=>{ prev = {...sensors}; sensors.tick(); updateKPIs(prev); fan.evaluate(); schedule.checkNow(); }, 1000);
+    setInterval(()=>{ stepAuto(); if(connected) syncTick(); }, 40);
+
+    // Init
+    restorePrefs();
+    roam.setWaypoints(10);
+    connectMock();
+    updateKPIs();
+  </script>
+</body>
+</html>
